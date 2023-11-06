@@ -1,0 +1,16 @@
+Informacion de interes:
+- productos comprados
+- monto por producto
+- monto total
+- saldo
+
+Envio de mensajes:
+- Mensaje diario
+    * productos con su precio
+    * Monto total
+
+- Mensaje especifico:
+    * deuda total
+
+Historial:
+- Borrar a inicio de mes/trimestre?
