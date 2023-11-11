@@ -14,3 +14,6 @@ Envio de mensajes:
 
 Historial:
 - Borrar a inicio de mes/trimestre?
+
+colores
+https://paletadecolores.com.mx/paleta/0474e2/2a8ce9/51a4f1/77bbf8/9dd3ff/
