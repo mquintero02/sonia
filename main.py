@@ -1,5 +1,8 @@
-def main():
+from interfaces.GUI import GUI
 
-    print("a")
+def main():
+    
+    data=[]
+    gui = GUI(data)
 
 main()
