@@ -1,6 +1,7 @@
 class Customer:
 
-    def __init__(self, name, lastName, ci, phone, phoneOwner, balance, history, lastMessageDate):
+    def __init__(self, id, name, lastName, ci, phone, phoneOwner, balance, history, lastMessageDate):
+        self.id = id
         self.name = name
         self.lastName = lastName
         self.ci = ci

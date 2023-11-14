@@ -9,18 +9,27 @@ class CustomerTab(Tab):
 
         self.init_widgets()
 
+    def set_buttons(self, canvas):
+        canvasHeight = 25
+        for i, c in enumerate(self.data):
+            btn = Button(canvas, text=f"{c.id} {c.lastName}", justify=LEFT, font=("Arial", 13), borderwidth=1, background="blue")
+            btn.config(width=250, height=2)
+            canvas.create_window(40, 25+(40*i), window=btn)
+            canvasHeight += 40
+
+        canvas.config(scrollregion=(0,0,300, canvasHeight))
+        return canvas
+
     def init_widgets(self):
         canvas = Canvas(self.frame)
-        canvas.config(background="blue")
-        canvas.place(x=0, y=300, width=900, height=400) 
+        canvas.place(x=10, y=300, width=900, height=400) 
 
         ybar = Scrollbar(self.frame)
         ybar.config(command=canvas.yview)                   
         canvas.config(yscrollcommand=ybar.set)              
-        ybar.place(x=900, y=300, width=30, height=400)
+        ybar.place(x=910, y=300, width=30, height=400)
 
-        #INGRESAR DATA PARA SABER EL TAMAGNO DE CANVAS
-        canvas.config(scrollregion=(0,0,300, 1000))
+        canvas = self.set_buttons(canvas)
 
         textName = Label(self.frame, text="Nombre:", font=('Arial', 12))
         textLastName = Label(self.frame, text="Apellido:",font=('Arial', 12))
