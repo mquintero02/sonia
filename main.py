@@ -1,10 +1,13 @@
 from interfaces.GUI import GUI
 from clases.Customer import Customer
 from clases.Product import Product
+from db import *
 
 from random import randrange
 
 def main():
+
+    print()
 
     customerData=[
         Customer(0, "juan", "a", "123", "1234", "1234", 0, ""),
@@ -20,7 +23,7 @@ def main():
         Customer(4, "pedro", "cd", "123", "1234", "1234", 0, ""),
         Customer(4, "antonio", "a", "123", "1234", "1234", 0, ""),
         Customer(4, "alexandra", "z", "123", "1234", "1234", 0, ""),
-        Customer(4, "abril", "a", "123", "1234", "1234", 0, ""),
+        Customer(4, "abril", "a", "123", "1234", "1234", 100, ""),
     ]
     productData = [
         Product(1, "producto", 3, "tipo"),

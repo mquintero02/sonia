@@ -11,7 +11,6 @@ class CustomerTab(Tab):
         self.data.sort(key = lambda x: x.name)
 
         self.inputs = []
-
         self.buttons = []
 
         self.canvas = self.init_widgets()
@@ -29,11 +28,12 @@ class CustomerTab(Tab):
 
     def set_buttons(self, canvas):
         canvas.delete('all')
-        canvasHeight = 25
+        self.buttons.clear()
+        canvasHeight = 0
         for i, c in enumerate(self.data):
             if self.inputs[0].get() in c.name and self.inputs[1].get() in c.lastName and self.inputs[2].get() in c.ci:
                 self.buttons.append(TopLevelCust(canvas, c))
-                canvas.create_window(40, 25+(canvasHeight), window=self.buttons[i].button)
+                canvas.create_window(40, 20+(canvasHeight), window=self.buttons[i].button)
                 canvasHeight += 40
 
         canvas.config(scrollregion=(0,0,300, canvasHeight))

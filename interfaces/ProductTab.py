@@ -1,4 +1,6 @@
 from interfaces.Tab import Tab
+from interfaces.TopLevelProd import TopLevelProd
+
 from tkinter import *
 from tkinter import ttk
 
@@ -11,6 +13,7 @@ class ProductTab(Tab):
         self.data.sort(key = lambda x: x.name)
 
         self.inputs = []
+        self.buttons = []
 
         self.canvas = self.init_widgets()
 
@@ -25,11 +28,11 @@ class ProductTab(Tab):
     def set_buttons(self, canvas):
         canvas.delete('all')
         canvasHeight = 25
-        for i, c in enumerate(self.data):
-            if self.inputs[0].get() in c.name and (self.inputs[2].get() in c.type or self.inputs[2].get()=="todos"):
-                btn = Button(canvas, text=f"{c.name} {c.price} {c.type}", justify=LEFT, font=("Arial", 13), borderwidth=1, background="blue")
-                btn.config(width=250, height=2)
-                canvas.create_window(40, 25+(canvasHeight), window=btn)
+        self.buttons.clear()
+        for i, p in enumerate(self.data):
+            if self.inputs[0].get() in p.name and (self.inputs[2].get() in p.type or self.inputs[2].get()=="todos"):
+                self.buttons.append(TopLevelProd(canvas, p))
+                canvas.create_window(40, 25+(canvasHeight), window=self.buttons[i].button)
                 canvasHeight += 40
 
         canvas.config(scrollregion=(0,0,300, canvasHeight))
