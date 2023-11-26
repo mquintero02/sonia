@@ -1,54 +1,78 @@
 from tkinter import *
-from interfaces.CustomerTab import CustomerTab
-from interfaces.ProductTab import ProductTab
-from interfaces.MessageTab import MessageTab
-
+from tkinter import ttk
+from interfaces.CustFrame import CustFrame
 
 class GUI:
 
-    def __init__(self, customerData, productData, messageData):
-        self.customerData = customerData
-        self.productData = productData
-        self.messageData = messageData
-
-        self.tabs = []
+    def __init__(self, data):
+        self.data = data
+        self.font_size_p = 24
+        self.buttons = []
 
         self.root = Tk()
         self.root.title('Cantina Maria Auxiliadora')
-        self.root.geometry("1080x720")
+        self.root.geometry("1440x960")
         self.root.resizable(0, 0)
 
-        self.init_tabs()
-        self.init_navBar()
+        self.mainFrame = Frame(self.root, background='blue')
+        self.mainFrame.place(x=0, y=0, width=1440, height=960)
 
-        self.root.mainloop()
+        self.canvas = Canvas(self.mainFrame, bd=0, highlightthickness=0)
+        self.canvas.place(x=0, y=494, width=1440, height=466) 
 
-    def show_tab(self, tabNum):
-        for t in self.tabs:
-            if self.tabs.index(t) == tabNum:
-                t.show()
-            else:
-                t.hide()
+        self.init_widgets()
 
-    def init_tabs(self):
-        customerTab = CustomerTab(self.root, "Clientes", self.customerData)
-        self.tabs.append(customerTab)
+        for j, i in enumerate(data):
+            self.buttons.append(CustFrame(self.canvas, i, self.root, self.mainFrame))
 
-        productTab = ProductTab(self.root, "Productos", self.productData)
-        productTab.hide()
-        self.tabs.append(productTab)
+        self.set_buttons()
 
-        messageTab = MessageTab(self.root, "Mensajes", self.messageData)
-        messageTab.hide()
-        self.tabs.append(messageTab)
+        self.mainFrame.mainloop()
 
-    def init_navBar(self):
-        navBar = Frame(self.root, background="blue")
-        navBar.place(x=0, y=0, width=120, height=720)
+    def p(self, num):
+        print(num)
 
-        btnCustomer = Button(navBar, text="Clientes", font=("Arial", 18), background="aqua", borderwidth=1, command=lambda:self.show_tab(0))
-        btnCustomer.place(x=0, y=0, width=120, height=80)
-        btnProduct = Button(navBar, text="Productos", font=("Arial", 18), background="aqua", borderwidth=1, command=lambda:self.show_tab(1))
-        btnProduct.place(x=0, y=80, width=120, height=80)
-        btnMessage = Button(navBar, text="Mensajes", font=("Arial", 18), background="aqua", borderwidth=1, command=lambda:self.show_tab(2))
-        btnMessage.place(x=0, y=640, width=120, height=80)
+    def set_buttons(self):
+        self.canvas.delete('all')
+        canvasHeight = 10
+
+        for b in self.buttons:
+            self.canvas.create_window(40, 20+(canvasHeight), window=b.button)
+            canvasHeight += 65
+
+        self.canvas.config(scrollregion=(0,0,300, canvasHeight))
+
+    def init_widgets(self):
+
+        textName = Label(self.mainFrame, text="Nombre:", font=('Arial', self.font_size_p))
+        textLastName = Label(self.mainFrame, text="Apellido:",font=('Arial', self.font_size_p))
+        textCi = Label(self.mainFrame, text="Cédula:",font=('Arial', self.font_size_p))
+
+        inputName = Entry(self.mainFrame, font=('Arial', self.font_size_p))
+        inputLastName = Entry(self.mainFrame, font=('Arial', self.font_size_p))
+        inputCi = Entry(self.mainFrame, font=('Arial', self.font_size_p))
+
+        textName.place(x=0, y=134)
+        textLastName.place(x=0, y=210)
+        textCi.place(x=0, y=286)
+
+        inputName.place(x=138, y=134)
+        inputLastName.place(x=138, y=210)
+        inputCi.place(x=138, y=286)
+
+        ybar = Scrollbar(self.mainFrame)
+        ybar.config(command=self.canvas.yview)                   
+        self.canvas.config(yscrollcommand=ybar.set)              
+        ybar.place(x=1410, y=494, width=30, height=466)
+
+        btnFilter = Button(self.mainFrame, text="Filtrar", font=("Arial", 24), background='aqua', highlightbackground = "black", command=lambda:self.set_buttons(canvas))
+        btnFilter.place(x=146, y=366, width=164, height=83)
+
+        orderList = ttk.Combobox(self.mainFrame, state="readonly", values=['nombre', 'apellido', 'saldo'], font=("Arial", 24))
+        orderList.place(x=790, y=200)
+
+        btnOrder = Button(self.mainFrame, text="Ordenar", font=("Arial", 24), background="aqua", command=lambda:self.reOrder(orderList.get()))
+        btnOrder.place(x=1195, y=200, width=210, height=83)
+        
+        btnAdd = Button(self.mainFrame, text="Añadir", font=("Arial", 24), background="#009846")
+        btnAdd.place(x=1195, y=50, width=210, height=83)

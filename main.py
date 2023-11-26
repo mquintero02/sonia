@@ -1,15 +1,11 @@
 from interfaces.GUI import GUI
 from clases.Customer import Customer
-from clases.Product import Product
 from db import *
 
-from random import randrange
 
 def main():
 
-    print()
-
-    customerData=[
+    data=[
         Customer(0, "juan", "a", "123", "1234", "1234", 0, ""),
         Customer(1, "pedro", "a", "123", "1234", "1234", 0, ""),
         Customer(2, "julio", "a", "123", "1234", "1234", 10, ""),
@@ -25,25 +21,7 @@ def main():
         Customer(4, "alexandra", "z", "123", "1234", "1234", 0, ""),
         Customer(4, "abril", "a", "123", "1234", "1234", 100, ""),
     ]
-    productData = [
-        Product(1, "producto", 3, "tipo"),
-        Product(1, "producto", 3, "tipo"),
-        Product(1, "producto", 3, "tipo"),
-        Product(1, "producto", 3, "tipo"),
-        Product(1, "producto", 3, "tipo"),
-        Product(1, "producto", 3, "tipo"),
-        Product(1, "producto", 3, "tipo"),
-        Product(1, "producto", 3, "tipo"),
-        Product(1, "producto", 3, "tipo"),
-        Product(1, "producto", 3, "tipo"),
-        Product(1, "producto", 3, "tipo"),
-    ]
-    for i, j in enumerate(productData):
-        j.id = i
-        j.price = randrange(1, 10)
 
-    historyData = []
-
-    gui = GUI(customerData, productData, historyData)
+    gui = GUI(data)
 
 main()
