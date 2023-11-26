@@ -11,7 +11,7 @@ class GUI:
 
         self.root = Tk()
         self.root.title('Cantina Maria Auxiliadora')
-        self.root.geometry("1440x960")
+        self.root.geometry("1440x960+0+0")
         self.root.resizable(0, 0)
 
         self.mainFrame = Frame(self.root, background='blue')
@@ -20,17 +20,19 @@ class GUI:
         self.canvas = Canvas(self.mainFrame, bd=0, highlightthickness=0)
         self.canvas.place(x=0, y=494, width=1440, height=466) 
 
+        self.root.bind_all("<MouseWheel>", self.mousewheel)
+        
+
         self.init_widgets()
 
-        for j, i in enumerate(data):
+        for i in data:
             self.buttons.append(CustFrame(self.canvas, i, self.root, self.mainFrame))
 
         self.set_buttons()
-
         self.mainFrame.mainloop()
 
-    def p(self, num):
-        print(num)
+    def mousewheel(self, event):
+        self.canvas.yview_scroll(-1 + int(event.delta / 120), "units")
 
     def set_buttons(self):
         self.canvas.delete('all')
@@ -43,6 +45,8 @@ class GUI:
         self.canvas.config(scrollregion=(0,0,300, canvasHeight))
 
     def init_widgets(self):
+        title = Label(self.mainFrame, text="Cantina CMA", font=('Arial', 52))
+        title.place(x=10, y=10)
 
         textName = Label(self.mainFrame, text="Nombre:", font=('Arial', self.font_size_p))
         textLastName = Label(self.mainFrame, text="Apellido:",font=('Arial', self.font_size_p))
@@ -52,13 +56,13 @@ class GUI:
         inputLastName = Entry(self.mainFrame, font=('Arial', self.font_size_p))
         inputCi = Entry(self.mainFrame, font=('Arial', self.font_size_p))
 
-        textName.place(x=0, y=134)
-        textLastName.place(x=0, y=210)
-        textCi.place(x=0, y=286)
+        textName.place(x=10, y=134)
+        textLastName.place(x=10, y=210)
+        textCi.place(x=10, y=286)
 
-        inputName.place(x=138, y=134)
-        inputLastName.place(x=138, y=210)
-        inputCi.place(x=138, y=286)
+        inputName.place(x=148, y=134)
+        inputLastName.place(x=148, y=210)
+        inputCi.place(x=148, y=286)
 
         ybar = Scrollbar(self.mainFrame)
         ybar.config(command=self.canvas.yview)                   

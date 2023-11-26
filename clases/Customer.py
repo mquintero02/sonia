@@ -1,6 +1,6 @@
 class Customer:
 
-    def __init__(self, id, name, lastName, ci, phone, phoneOwner, balance, lastMessageDate):
+    def __init__(self, id, name, lastName, ci, phone, phoneOwner, balance, lastMessageDate, history):
         self.id = id
         self.name = name
         self.lastName = lastName
@@ -9,3 +9,4 @@ class Customer:
         self.phoneOwner = phoneOwner
         self.balance = balance
         self.lastMessageDate = lastMessageDate
+        self.history = history
