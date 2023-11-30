@@ -1,82 +1,76 @@
-from tkinter import *
-from tkinter import ttk
-from interfaces.CustFrame import CustFrame
+from customtkinter import *
+from interfaces.CButton import CButton
+from clases.Customer import Customer
+from db import *
 
-class GUI:
+class Gui(CTk):
 
     def __init__(self, data):
+        super().__init__()
         self.data = data
-        self.font_size_p = 24
-        self.buttons = []
+        self.geometry('720x720')
+        self.resizable(0, 0)
+        self.title('Cantina')
 
-        self.root = Tk()
-        self.root.title('Cantina Maria Auxiliadora')
-        self.root.geometry("1440x960+0+0")
-        self.root.resizable(0, 0)
+        self.titleFont = ('calibri', 32)
+        self.buttonFont = ('calibri', 24)
+        self.labelFont = ('calibri', 18)
 
-        self.mainFrame = Frame(self.root, background='blue')
-        self.mainFrame.place(x=0, y=0, width=1440, height=960)
+        ww = 720
+        wh = 720
 
-        self.canvas = Canvas(self.mainFrame, bd=0, highlightthickness=0)
-        self.canvas.place(x=0, y=494, width=1440, height=466) 
+        menuFrame = CTkFrame(self, width=720, height=720)
+        menuFrame.pack()
 
-        self.root.bind_all("<MouseWheel>", self.mousewheel)
-        
-
-        self.init_widgets()
-
-        for i in data:
-            self.buttons.append(CustFrame(self.canvas, i, self.root, self.mainFrame))
-
-        self.set_buttons()
-        self.mainFrame.mainloop()
-
-    def mousewheel(self, event):
-        self.canvas.yview_scroll(-1 + int(event.delta / 120), "units")
-
-    def set_buttons(self):
-        self.canvas.delete('all')
-        canvasHeight = 10
-
-        for b in self.buttons:
-            self.canvas.create_window(40, 20+(canvasHeight), window=b.button)
-            canvasHeight += 65
-
-        self.canvas.config(scrollregion=(0,0,300, canvasHeight))
-
-    def init_widgets(self):
-        title = Label(self.mainFrame, text="Cantina CMA", font=('Arial', 52))
+        #TITULO DEL MAIN
+        title = CTkLabel(menuFrame, text="Cantina María Auxiliadora", font=self.titleFont)
         title.place(x=10, y=10)
 
-        textName = Label(self.mainFrame, text="Nombre:", font=('Arial', self.font_size_p))
-        textLastName = Label(self.mainFrame, text="Apellido:",font=('Arial', self.font_size_p))
-        textCi = Label(self.mainFrame, text="Cédula:",font=('Arial', self.font_size_p))
+        #BOTON DE ANADIR
+        btnNew = CTkButton(menuFrame, text="Añadir", fg_color='green', width=150, height=40, font=self.buttonFont,
+                            command=self.addWindow)
+        btnNew.place(x=ww-160, y=10)
 
-        inputName = Entry(self.mainFrame, font=('Arial', self.font_size_p))
-        inputLastName = Entry(self.mainFrame, font=('Arial', self.font_size_p))
-        inputCi = Entry(self.mainFrame, font=('Arial', self.font_size_p))
+        self.toplevel_window = None
 
-        textName.place(x=10, y=134)
-        textLastName.place(x=10, y=210)
-        textCi.place(x=10, y=286)
+    def open_customer(self, index):
+        pass
 
-        inputName.place(x=148, y=134)
-        inputLastName.place(x=148, y=210)
-        inputCi.place(x=148, y=286)
-
-        ybar = Scrollbar(self.mainFrame)
-        ybar.config(command=self.canvas.yview)                   
-        self.canvas.config(yscrollcommand=ybar.set)              
-        ybar.place(x=1410, y=494, width=30, height=466)
-
-        btnFilter = Button(self.mainFrame, text="Filtrar", font=("Arial", 24), background='aqua', highlightbackground = "black", command=lambda:self.set_buttons(canvas))
-        btnFilter.place(x=146, y=366, width=164, height=83)
-
-        orderList = ttk.Combobox(self.mainFrame, state="readonly", values=['nombre', 'apellido', 'saldo'], font=("Arial", 24))
-        orderList.place(x=790, y=200)
-
-        btnOrder = Button(self.mainFrame, text="Ordenar", font=("Arial", 24), background="aqua", command=lambda:self.reOrder(orderList.get()))
-        btnOrder.place(x=1195, y=200, width=210, height=83)
+    def add_data(self, name, lastName, ci, phoneExt, phoneNum):
         
-        btnAdd = Button(self.mainFrame, text="Añadir", font=("Arial", 24), background="#009846")
-        btnAdd.place(x=1195, y=50, width=210, height=83)
+        if name.get() != '' and lastName.get() != '' and ci.get().isnumeric() and len(phoneExt.get())==4 and phoneExt.get().isnumeric() and phoneNum.get().isnumeric():
+            newCust = Customer(len(self.data)+1, name.get(), lastName.get(), ci.get(), f'+58{phoneExt.get()[1:]}{phoneNum.get()}', 0, 'Nunca')
+            self.data.append(newCust)
+            save_customer(self.data)
+            print('guardado')
+
+    def update_data(self, index, updatedCustomer):
+        pass
+
+    def addWindow(self):
+        if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
+            self.toplevel_window = CTkToplevel(self)  # create window if its None or destroyed
+            self.toplevel_window.attributes('-topmost', 'true')
+            self.toplevel_window.geometry('480x480')
+
+            name = StringVar(self.toplevel_window, '')
+            lastName = StringVar(self.toplevel_window, '')
+            ci = StringVar(self.toplevel_window, '')
+            phoneExt =StringVar(self.toplevel_window, '')
+            phoneNum = StringVar(self.toplevel_window, '')
+
+            CTkLabel(self.toplevel_window, text='Nombre', font=self.labelFont, width=100, height=30).place(x=10, y=10)
+            inputName = CTkEntry(self.toplevel_window, textvariable=name,  placeholder_text="Apellido", font=self.labelFont, width=300, height=30).place(x=120, y=10)
+            CTkLabel(self.toplevel_window, text='Apellido', font=self.labelFont, width=100, height=30).place(x=10, y=50)
+            inputLastName = CTkEntry(self.toplevel_window, textvariable=lastName, placeholder_text="Apellido", font=self.labelFont, width=300, height=30).place(x=120, y=50)
+            CTkLabel(self.toplevel_window, text='Cédula', font=self.labelFont, width=100, height=30).place(x=10, y=90)
+            inputCi = CTkEntry(self.toplevel_window, textvariable=ci,placeholder_text="Cédula", font=self.labelFont, width=300, height=30).place(x=120, y=90)
+            CTkLabel(self.toplevel_window, text='Teléfono', font=self.labelFont, width=100, height=30).place(x=10, y=130)
+            inputPhoneExt = CTkEntry(self.toplevel_window, textvariable=phoneExt, placeholder_text="04xx", font=self.labelFont, width=50, height=30).place(x=120, y=130)
+            inputPhoneNum = CTkEntry(self.toplevel_window, textvariable=phoneNum, placeholder_text="1110000", font=self.labelFont, width=240, height=30).place(x=180, y=130)
+        
+            btnSaveNew = CTkButton(self.toplevel_window, text="Guardar", fg_color='green', width=150, height=40, font=self.buttonFont, command=lambda:self.add_data(name, lastName, ci, phoneExt, phoneNum)).place(x=165, y=200)
+            btnCancel = CTkButton(self.toplevel_window, text="Cancelar", fg_color='red', width=120, height=40, font=self.buttonFont, command=lambda:self.toplevel_window.destroy()).place(x=10, y=430) #Customer(len(self.data)+1, inputName.get(), inputLastName.get(), inputCi.get(),f'+58{inputPhoneExt}{inputPhoneNum}', 0, 'Nunca')
+
+        else:
+            self.toplevel_window.deiconify()  #if window exists focus it
