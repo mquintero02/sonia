@@ -106,7 +106,8 @@ class Gui(CTk):
 
     def add_data(self, name, lastName, ci, phoneExt, phoneNum):
         if name.get() != '' and lastName.get() != '' and ci.get().isnumeric() and len(phoneExt.get())==4 and phoneExt.get().isnumeric() and phoneNum.get().isnumeric():
-            newId = read_last_index() + 1
+            print(read_last_index())
+            newId = int(read_last_index()) + 1
             newCust = Customer(newId, name.get(), lastName.get(), ci.get(), f'+58{phoneExt.get()[1:]}{phoneNum.get()}', 0, 'Nunca')
             self.data.append(newCust)
             save_customer(self.data)

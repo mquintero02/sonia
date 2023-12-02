@@ -34,7 +34,7 @@ def read_history():
     
 def read_last_index():
     try:
-        with open('data/historyData.pkl','rb') as f:
+        with open('data/lastIndex.pkl','rb') as f:
             return pickle.load(f)
     except:
         return 0
