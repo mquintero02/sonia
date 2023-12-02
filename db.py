@@ -31,3 +31,14 @@ def read_history():
             return pickle.load(f)
     except:
         return {}
+    
+def read_last_index():
+    try:
+        with open('data/historyData.pkl','rb') as f:
+            return pickle.load(f)
+    except:
+        return 0
+
+def save_last_index(index):
+    with open('data/lastIndex.pkl','wb') as f:
+        pickle.dump(index, f)

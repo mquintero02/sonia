@@ -8,3 +8,10 @@ class Compra:
         self.dateStr = f'{date.day}/{date.month}/{date.year}'
         self.sent = False
         
+    def toString(self):
+        message = f'{self.dateStr}\n'
+        for i in self.items:
+            message += f'({i["quantity"]}) {i["name"]}: {i["price"]}$\n'
+        message += '\n'
+
+        return message

@@ -1,4 +1,6 @@
 from customtkinter import *
+import pywhatkit
+import requests
 from interfaces.CButton import CButton
 from clases.Customer import Customer
 from clases.Compra import Compra
@@ -17,8 +19,9 @@ class Gui(CTk):
         self.toplevel_window = None
 
         self.titleFont = ('calibri', 32)
+        self.titleFont2 = ('calibri', 26)
         self.buttonFont = ('calibri', 24)
-        self.labelFont = ('calibri', 18)
+        self.labelFont = ('calibri', 20)
 
         self.ww = 720
         self.wh = 720
@@ -44,22 +47,31 @@ class Gui(CTk):
             self.customerFrame = CTkFrame(self, width=720, height=720)
             self.customerFrame.pack()
 
-            sf = CTkScrollableFrame(self.customerFrame, width=300, height=650, fg_color='yellow')
-            sf.place(x=380, y=20)
+            if customer.balance < -1:
+                CTkLabel(self.customerFrame, text=f'Saldo: {customer.balance}$', fg_color='red', font=self.titleFont, width=370, height=40, corner_radius=5).place(x=310, y=20)
+            elif customer.balance >1:
+                CTkLabel(self.customerFrame, text=f'Saldo: {customer.balance}$', fg_color='green', font=self.titleFont, width=370, height=40, corner_radius=5).place(x=310, y=20)
+            else:
+                CTkLabel(self.customerFrame, text=f'Saldo: {customer.balance}$', fg_color='blue', font=self.titleFont, width=370, height=40, corner_radius=5).place(x=310, y=20)
+
+            sf = CTkScrollableFrame(self.customerFrame, width=370, height=600, fg_color='yellow')
+            sf.place(x=310, y=70)
 
             for c in customerHData:
-                CTkLabel(sf, text=c['dateStr'], font=self.labelFont, text_color='black').pack()
-                for i in c['items']:
+                CTkLabel(sf, text=c.dateStr, font=self.labelFont, text_color='black').pack()
+                for i in c.items:
                     print(i["name"])
-                    CTkLabel(sf, text=f'({i["quantity"]}){i["name"]}: {i["price"]}$', text_color='black', anchor="w", width=300).pack()
-                CTkLabel(sf, text='-----------------------------------------', font=self.labelFont, text_color='black').pack()
+                    CTkLabel(sf, text=f'({i["quantity"]}) {i["name"]}: {i["price"]}$', text_color='black', anchor="w", width=370, font=self.labelFont).pack()
+                CTkLabel(sf, text='------------------------------------------------------', font=self.labelFont, text_color='black').pack()
 
             btnBack = CTkButton(self.customerFrame, text="Regresar", width=100, height=40, font=self.buttonFont, command=self.open_menu).place(x=10, y=10)
-            btnFiar = CTkButton(self.customerFrame, text="Fiar", width=100, height=40, font=self.buttonFont, command=lambda:self.fiar_window(customer), fg_color='orange', text_color='black').place(x=130, y=200)
-            btnAbonar = CTkButton(self.customerFrame, text='Abonar', width=100, height=40, font=self.buttonFont, fg_color='green', command=lambda:self.abonar_window(customer)).place(x=130, y=260)
+            btnFiar = CTkButton(self.customerFrame, text="Fiar", width=100, height=40, font=self.buttonFont, command=lambda:self.fiar_window(customer), fg_color='orange', text_color='black').place(x=100, y=200)
+            btnAbonar = CTkButton(self.customerFrame, text='Abonar', width=100, height=40, font=self.buttonFont, fg_color='green', command=lambda:self.abonar_window(customer)).place(x=100, y=260)
+            btnMessage = CTkButton(self.customerFrame, text='Enviar\nMensaje', width=100, height=40, font=self.buttonFont, command=lambda:self.send_message(customer)).place(x=100, y=360)
+            btnDetele = CTkButton(self.customerFrame, text='Eliminar', width=100, height=40, font=self.buttonFont, fg_color='red').place(x=10, y=670)
 
             self.custFrameTittle.set(f'{customer.name} {customer.lastName}\nCI: {customer.ci}\nTeléfono: {customer.phone}')
-            self.customerFrameTitle = CTkLabel(self.customerFrame, text=self.custFrameTittle.get(), font=self.titleFont, width=300).place(x=10, y=70)
+            self.customerFrameTitle = CTkLabel(self.customerFrame, text=self.custFrameTittle.get(), font=self.titleFont2, width=200).place(x=10, y=70)
 
     def open_menu(self):
         if not self.customerFrame is None:
@@ -94,21 +106,23 @@ class Gui(CTk):
 
     def add_data(self, name, lastName, ci, phoneExt, phoneNum):
         if name.get() != '' and lastName.get() != '' and ci.get().isnumeric() and len(phoneExt.get())==4 and phoneExt.get().isnumeric() and phoneNum.get().isnumeric():
-            newId = len(self.data)+1
+            newId = read_last_index() + 1
             newCust = Customer(newId, name.get(), lastName.get(), ci.get(), f'+58{phoneExt.get()[1:]}{phoneNum.get()}', 0, 'Nunca')
             self.data.append(newCust)
             save_customer(self.data)
+            save_last_index(newId)
             self.hData[str(newId)] = []
             save_history(self.hData)
             self.refresh_menu()
             self.toplevel_window.destroy()
 
     def update_data(self, index, updatedCustomer):
-        pass
+        self.data[index] = updatedCustomer
+        save_customer(self.data)
 
     def add_to_aux_list(self, product, quantity, price, sf):
-        self.auxList.append({'name': product.get(), 'quantity':quantity.get(), 'price':float(price.get())*float(quantity.get())})
-        CTkLabel(sf, text=f'({quantity.get()}) {product.get()}: {float(price.get())*float(quantity.get())}$', text_color='black', font=self.labelFont, anchor='w', width=440).pack()
+        self.auxList.append({'name': product.get(), 'quantity':quantity.get(), 'price':-float(price.get())*float(quantity.get())})
+        CTkLabel(sf, text=f'({quantity.get()}) {product.get()}: {-float(price.get())*float(quantity.get())}$', text_color='black', font=self.labelFont, anchor='w', width=440).pack()
         product.set('')
         quantity.set('')
         price.set('')
@@ -126,10 +140,18 @@ class Gui(CTk):
         self.toplevel_window.destroy()
 
     def save_fiar(self, customer):
+        amount = 0
         self.hData[str(customer.id)].append(
-            Compra(self.auxListm, datetime.now())
+            Compra(self.auxList, datetime.now())
         )
+        for i in self.auxList:
+            amount += float(i['price'])
+
+        index = self.data.index(customer)
+        customer.balance += amount
+
         save_history(self.hData)
+        self.update_data(index, customer)
         self.refresh_customer_window(customer)
         self.close_fiar_window()
 
@@ -208,3 +230,29 @@ class Gui(CTk):
 
         else:
             self.toplevel_window.deiconify()  #if window exists focus it
+
+    def send_message(self, customer):
+        
+        try:
+            request = requests.get("https://google.com", timeout=5)
+        except (requests.ConnectionError, requests.Timeout):
+            print("Sin conexión a internet.")
+        else:
+            print("Con conexión a internet.")
+
+        message = "comienzo de mensaje de prueba\n\n"
+        message2 = ""
+        history = self.hData[str(customer.id)]
+
+        for c in reversed(history):
+            if c.sent:
+                break
+            else:
+                message2 = c.toString() + message2
+                c.sent = True
+        
+        self.hData[str(customer.id)] = history
+        save_history(self.hData)
+
+        message = message + message2    
+        pywhatkit.sendwhatmsg_instantly(customer.phone, message)

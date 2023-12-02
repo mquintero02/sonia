@@ -1,0 +1,45 @@
+Date: 2/12/2023
+Time: 5:58
+Phone Number: +584149153212
+Message: una linea
+--------------------
+Date: 2/12/2023
+Time: 6:1
+Phone Number: +584149153212
+Message: una linea
+--------------------
+Date: 2/12/2023
+Time: 6:1
+Phone Number: +584149153212
+Message: una linea
+--------------------
+Date: 2/12/2023
+Time: 6:17
+Phone Number: +584149153212
+Message: una linea
+--------------------
+Date: 2/12/2023
+Time: 6:56
+Phone Number: +584149153212
+Message: comienzo de mensaje de prueba2/12/2023(2) Pizza: -3.0$2/12/2023(1) Depósito: 20$2/12/2023(2) jugo: -2.0$(2) empanada: -4.0$
+--------------------
+Date: 2/12/2023
+Time: 6:58
+Phone Number: +584149153212
+Message: comienzo de mensaje de prueba2/12/2023(2) Pizza: -3.0$2/12/2023(1) Depósito: 20$2/12/2023(2) jugo: -2.0$(2) empanada: -4.0$
+--------------------
+Date: 2/12/2023
+Time: 7:1
+Phone Number: +584149153212
+Message: comienzo de mensaje de prueba2/12/2023(2) Pizza: -3.0$2/12/2023(1) Depósito: 20$2/12/2023(2) jugo: -2.0$(2) empanada: -4.0$
+--------------------
+Date: 2/12/2023
+Time: 7:2
+Phone Number: +584149153212
+Message: comienzo de mensaje de prueba
+--------------------
+Date: 2/12/2023
+Time: 7:3
+Phone Number: +584149153212
+Message: comienzo de mensaje de prueba
+--------------------
