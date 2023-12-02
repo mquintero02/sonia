@@ -4,10 +4,11 @@ from db import *
 def main():
 
     data = read_customer()
+    hData = read_history()
     for i in data:
-        print(i.name +' '+ i.lastName+ ' ' + i.ci + ' ' + i.phone)
+        print(str(i.id) + ' ' +i.name +' '+ i.lastName+ ' ' + i.ci + ' ' + i.phone)
 
-    gui = Gui(data)
+    gui = Gui(data, hData)
     gui.mainloop()
 
 main()

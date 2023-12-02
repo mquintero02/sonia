@@ -30,4 +30,4 @@ def read_history():
         with open('data/historyData.pkl','rb') as f:
             return pickle.load(f)
     except:
-        return []
+        return {}
