@@ -1,5 +1,6 @@
 from customtkinter import *
-import pywhatkit
+from CTkMessagebox import CTkMessagebox
+from pywhatkit import sendwhatmsg_instantly
 import requests
 from interfaces.CButton import CButton
 from clases.Customer import Customer
@@ -35,7 +36,7 @@ class Gui(CTk):
         #FRAME DE COMPRADORES-------------------------------------------------------------------------------
 
         self.customerFrame = None
-        self.custFrameTittle = StringVar(self.customerFrame, 'Mario Quintero\nCI: 30165511\nTeléfono: 0414-9153212')
+        self.custFrameTittle = StringVar(self.customerFrame, '')
 
         self.open_menu()
 
@@ -57,21 +58,53 @@ class Gui(CTk):
             sf = CTkScrollableFrame(self.customerFrame, width=370, height=600, fg_color='yellow')
             sf.place(x=310, y=70)
 
-            for c in customerHData:
-                CTkLabel(sf, text=c.dateStr, font=self.labelFont, text_color='black').pack()
+
+            auxDate = ""
+            auxBalance = 0
+            auxHData = list(reversed(customerHData))
+            lColor = ''
+            for j, c in enumerate(auxHData):
+                if auxDate != c.dateStr:
+                    CTkLabel(sf, text=c.dateStr, font=self.labelFont, text_color='black').pack()
+                    auxBalance = c.resultBalance
+                    auxDate = c.dateStr
+                    if auxBalance < -1:
+                        lColor = '#ff735a'
+                    elif auxBalance > 1:
+                        lColor = '#a9e159'
+                    else:
+                        lColor = 'blue'
                 for i in c.items:
-                    print(i["name"])
-                    CTkLabel(sf, text=f'({i["quantity"]}) {i["name"]}: {i["price"]}$', text_color='black', anchor="w", width=370, font=self.labelFont).pack()
-                CTkLabel(sf, text='------------------------------------------------------', font=self.labelFont, text_color='black').pack()
+                    CTkLabel(sf, text=f'{i["quantity"]} {i["name"]}: {i["price"]}$', text_color='black', anchor="w", width=370, font=self.labelFont).pack()
+                
+                if j+1 < len(auxHData):
+                    if auxHData[j+1].dateStr != auxDate:
+                        CTkLabel(sf, fg_color=lColor, text=f"saldo: {auxBalance}$", font=self.labelFont, text_color='black',width=370, anchor=E).pack()
+                        CTkLabel(sf, text='------------------------------------------------------', font=self.labelFont, text_color='black').pack()
+                else:
+                        CTkLabel(sf, fg_color=lColor, text=f"saldo: {auxBalance}$", font=self.labelFont, text_color='black',width=370, anchor=E).pack()
+                        CTkLabel(sf, text='------------------------------------------------------', font=self.labelFont, text_color='black').pack()
 
             btnBack = CTkButton(self.customerFrame, text="Regresar", width=100, height=40, font=self.buttonFont, command=self.open_menu).place(x=10, y=10)
             btnFiar = CTkButton(self.customerFrame, text="Fiar", width=100, height=40, font=self.buttonFont, command=lambda:self.fiar_window(customer), fg_color='orange', text_color='black').place(x=100, y=200)
             btnAbonar = CTkButton(self.customerFrame, text='Abonar', width=100, height=40, font=self.buttonFont, fg_color='green', command=lambda:self.abonar_window(customer)).place(x=100, y=260)
             btnMessage = CTkButton(self.customerFrame, text='Enviar\nMensaje', width=100, height=40, font=self.buttonFont, command=lambda:self.send_message(customer)).place(x=100, y=360)
-            btnDetele = CTkButton(self.customerFrame, text='Eliminar', width=100, height=40, font=self.buttonFont, fg_color='red').place(x=10, y=670)
+            btnDetele = CTkButton(self.customerFrame, text='Eliminar', width=100, height=40, font=self.buttonFont, fg_color='red', command=lambda:self.delete_customer(customer)).place(x=10, y=670)
+            btnDetele = CTkButton(self.customerFrame, text='modificar', width=100, height=40, font=self.buttonFont, fg_color='blue', command=lambda:self.modify_window(customer)).place(x=180, y=10)
 
             self.custFrameTittle.set(f'{customer.name} {customer.lastName}\nCI: {customer.ci}\nTeléfono: {customer.phone}')
             self.customerFrameTitle = CTkLabel(self.customerFrame, text=self.custFrameTittle.get(), font=self.titleFont2, width=200).place(x=10, y=70)
+
+    def delete_customer(self, customer):
+        option = CTkMessagebox(message=f"¿Seguro que quieres eliminar a {customer.name} {customer.lastName}?",option_2="No", option_1="Si", font=self.labelFont)
+        response = option.get()
+
+        if response == "Si":
+            self.data.remove(customer)
+            self.hData.pop(str(customer.id))
+            save_customer(self.data)
+            save_history(self.hData)
+            self.open_menu()
 
     def open_menu(self):
         if not self.customerFrame is None:
@@ -96,6 +129,32 @@ class Gui(CTk):
             for c in self.data:
                 CButton(c, sf, self).set_button()
 
+            #FILTROS
+            filterName = CTkEntry(self.menuFrame, placeholder_text="Nombre", font=self.labelFont)
+            filterName.place(x=10, y=150)
+
+            filterLastName = CTkEntry(self.menuFrame, placeholder_text="Apellido", font=self.labelFont)
+            filterLastName.place(x=10, y=200)
+
+            filterCi = CTkEntry(self.menuFrame, placeholder_text="Cédula", font=self.labelFont)
+            filterCi.place(x=10, y=250)
+
+            btnfilter = CTkButton(self.menuFrame, text="Filtrar", width=140, height=40, font=self.buttonFont,
+                                command=lambda:self.filter(filterName.get(), filterLastName.get(), filterCi.get(), sf))
+            btnfilter.place(x=10, y=300)
+
+            btnResetFilter =CTkButton(self.menuFrame, text="Eliminar filtro", width=150, height=40, font=self.buttonFont,
+                                command=lambda:self.filter("", "", "", sf))
+            btnResetFilter.place(x=180, y=300)
+
+    def filter(self, name, lastName, ci, sf):
+        for c in sf.winfo_children():
+            c.destroy()
+
+        for c in self.data:
+            if f"{name}".lower() in c.name.lower() and f"{lastName}".lower() in c.lastName.lower() and f"{ci}".lower() in c.ci.lower():
+                CButton(c, sf, self).set_button()
+
     def refresh_menu(self):
         self.menuFrame.destroy()
         self.open_menu()
@@ -106,7 +165,9 @@ class Gui(CTk):
 
     def add_data(self, name, lastName, ci, phoneExt, phoneNum):
         if name.get() != '' and lastName.get() != '' and ci.get().isnumeric() and len(phoneExt.get())==4 and phoneExt.get().isnumeric() and phoneNum.get().isnumeric():
-            print(read_last_index())
+            
+            print(type(name))
+            
             newId = int(read_last_index()) + 1
             newCust = Customer(newId, name.get(), lastName.get(), ci.get(), f'+58{phoneExt.get()[1:]}{phoneNum.get()}', 0, 'Nunca')
             self.data.append(newCust)
@@ -116,17 +177,22 @@ class Gui(CTk):
             save_history(self.hData)
             self.refresh_menu()
             self.toplevel_window.destroy()
+        else:
+            CTkMessagebox(message="Datos no válidos")
 
     def update_data(self, index, updatedCustomer):
         self.data[index] = updatedCustomer
         save_customer(self.data)
 
     def add_to_aux_list(self, product, quantity, price, sf):
-        self.auxList.append({'name': product.get(), 'quantity':quantity.get(), 'price':-float(price.get())*float(quantity.get())})
-        CTkLabel(sf, text=f'({quantity.get()}) {product.get()}: {-float(price.get())*float(quantity.get())}$', text_color='black', font=self.labelFont, anchor='w', width=440).pack()
-        product.set('')
-        quantity.set('')
-        price.set('')
+        if product.get() != "" and quantity.get() != "" and quantity.get().isnumeric and price.get() != "" and price.get().isnumeric:
+            self.auxList.append({'name': product.get(), 'quantity':quantity.get(), 'price':-float(price.get())*float(quantity.get())})
+            CTkLabel(sf, text=f'({quantity.get()}) {product.get()}: {-float(price.get())*float(quantity.get())}$', text_color='black', font=self.labelFont, anchor='w', width=440).pack()
+            product.set('')
+            quantity.set('')
+            price.set('')
+        else:
+            CTkMessagebox(message="Datos no válidos")
 
     def add_to_aux_list_deposito(self, amount, sf):
         self.auxList.append({'name': 'Depósito', 'quantity':'1', 'price':amount.get()})
@@ -142,15 +208,15 @@ class Gui(CTk):
 
     def save_fiar(self, customer):
         amount = 0
-        self.hData[str(customer.id)].append(
-            Compra(self.auxList, datetime.now())
-        )
         for i in self.auxList:
             amount += float(i['price'])
 
         index = self.data.index(customer)
         customer.balance += amount
 
+        self.hData[str(customer.id)].append(
+            Compra(self.auxList, datetime.now(), customer.balance)
+        )
         save_history(self.hData)
         self.update_data(index, customer)
         self.refresh_customer_window(customer)
@@ -175,14 +241,56 @@ class Gui(CTk):
             CTkLabel(self.toplevel_window, text='Cédula', font=self.labelFont, width=100, height=30).place(x=10, y=90)
             inputCi = CTkEntry(self.toplevel_window, textvariable=ci,placeholder_text="Cédula", font=self.labelFont, width=300, height=30).place(x=120, y=90)
             CTkLabel(self.toplevel_window, text='Teléfono', font=self.labelFont, width=100, height=30).place(x=10, y=130)
-            inputPhoneExt = CTkEntry(self.toplevel_window, textvariable=phoneExt, placeholder_text="04xx", font=self.labelFont, width=50, height=30).place(x=120, y=130)
-            inputPhoneNum = CTkEntry(self.toplevel_window, textvariable=phoneNum, placeholder_text="1110000", font=self.labelFont, width=240, height=30).place(x=180, y=130)
+            inputPhoneExt = CTkEntry(self.toplevel_window, textvariable=phoneExt, placeholder_text="04xx", font=self.labelFont, width=70, height=30).place(x=120, y=130)
+            inputPhoneNum = CTkEntry(self.toplevel_window, textvariable=phoneNum, placeholder_text="1110000", font=self.labelFont, width=220, height=30).place(x=200, y=130)
         
             btnSaveNew = CTkButton(self.toplevel_window, text="Guardar", fg_color='green', width=150, height=40, font=self.buttonFont, command=lambda:self.add_data(name, lastName, ci, phoneExt, phoneNum)).place(x=165, y=200)
             btnCancel = CTkButton(self.toplevel_window, text="Cancelar", fg_color='red', width=120, height=40, font=self.buttonFont, command=lambda:self.toplevel_window.destroy()).place(x=10, y=430) #Customer(len(self.data)+1, inputName.get(), inputLastName.get(), inputCi.get(),f'+58{inputPhoneExt}{inputPhoneNum}', 0, 'Nunca')
 
         else:
             self.toplevel_window.deiconify()  #if window exists focus it
+    
+    def modify_window(self, customer):
+        if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
+            self.toplevel_window = CTkToplevel(self)  # create window if its None or destroyed
+            self.toplevel_window.attributes('-topmost', 'true')
+            self.toplevel_window.geometry('480x480')
+
+            index = self.data.index(customer)
+
+            name = StringVar(self.toplevel_window, customer.name)
+            lastName = StringVar(self.toplevel_window, customer.lastName)
+            ci = StringVar(self.toplevel_window, customer.ci)
+            phoneExt =StringVar(self.toplevel_window, f'0{customer.phone[3:6]}')
+            phoneNum = StringVar(self.toplevel_window, f'{customer.phone[6:]}')
+
+            CTkLabel(self.toplevel_window, text='Nombre', font=self.labelFont, width=100, height=30).place(x=10, y=10)
+            inputName = CTkEntry(self.toplevel_window, textvariable=name,  placeholder_text="Nombre", font=self.labelFont, width=300, height=30).place(x=120, y=10)
+            CTkLabel(self.toplevel_window, text='Apellido', font=self.labelFont, width=100, height=30).place(x=10, y=50)
+            inputLastName = CTkEntry(self.toplevel_window, textvariable=lastName, placeholder_text="Apellido", font=self.labelFont, width=300, height=30).place(x=120, y=50)
+            CTkLabel(self.toplevel_window, text='Cédula', font=self.labelFont, width=100, height=30).place(x=10, y=90)
+            inputCi = CTkEntry(self.toplevel_window, textvariable=ci,placeholder_text="Cédula", font=self.labelFont, width=300, height=30).place(x=120, y=90)
+            CTkLabel(self.toplevel_window, text='Teléfono', font=self.labelFont, width=100, height=30).place(x=10, y=130)
+            inputPhoneExt = CTkEntry(self.toplevel_window, textvariable=phoneExt, placeholder_text="04xx", font=self.labelFont, width=70, height=30).place(x=120, y=130)
+            inputPhoneNum = CTkEntry(self.toplevel_window, textvariable=phoneNum, placeholder_text="1110000", font=self.labelFont, width=220, height=30).place(x=200, y=130)
+        
+            btnSaveNew = CTkButton(self.toplevel_window, text="Guardar", fg_color='green', width=150, height=40, font=self.buttonFont, command=lambda:self.modify_data(customer, index, name, lastName, ci, phoneExt, phoneNum)).place(x=165, y=200)
+            btnCancel = CTkButton(self.toplevel_window, text="Cancelar", fg_color='red', width=120, height=40, font=self.buttonFont, command=lambda:self.toplevel_window.destroy()).place(x=10, y=430) #Customer(len(self.data)+1, inputName.get(), inputLastName.get(), inputCi.get(),f'+58{inputPhoneExt}{inputPhoneNum}', 0, 'Nunca')
+
+        else:
+            self.toplevel_window.deiconify()  #if window exists focus it
+
+    def modify_data(self, customer, index, name, lastName, ci, phoneExt, phoneNum):
+        if name.get() != '' and lastName.get() != '' and ci.get().isnumeric() and len(phoneExt.get())==4 and phoneExt.get().isnumeric() and phoneNum.get().isnumeric():
+            customer.name = name.get()
+            customer.lastName = lastName.get()
+            customer.ci = ci.get()
+            customer.phone = f'+58{phoneExt.get()[1:]}{phoneNum.get()}'
+            self.update_data(index, customer)
+            self.refresh_customer_window(customer)
+            self.toplevel_window.destroy()
+        else:
+            CTkMessagebox(message="Datos no válidos")
 
     def fiar_window(self, customer):
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
@@ -233,19 +341,19 @@ class Gui(CTk):
             self.toplevel_window.deiconify()  #if window exists focus it
 
     def send_message(self, customer):
-        
         try:
             request = requests.get("https://google.com", timeout=5)
         except (requests.ConnectionError, requests.Timeout):
             print("Sin conexión a internet.")
+            return
         else:
             print("Con conexión a internet.")
 
         message = "comienzo de mensaje de prueba\n\n"
         message2 = ""
-        history = self.hData[str(customer.id)]
+        history = list(reversed(self.hData[str(customer.id)]))
 
-        for c in reversed(history):
+        for i, c in enumerate(history):
             if c.sent:
                 break
             else:
@@ -256,4 +364,4 @@ class Gui(CTk):
         save_history(self.hData)
 
         message = message + message2    
-        pywhatkit.sendwhatmsg_instantly(customer.phone, message)
+        sendwhatmsg_instantly(customer.phone, message)

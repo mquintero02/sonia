@@ -17,3 +17,5 @@ Historial:
 
 colores
 https://paletadecolores.com.mx/paleta/0474e2/2a8ce9/51a4f1/77bbf8/9dd3ff/
+
+c:\users\mario\appdata\local\packages\pythonsoftwarefoundation.python.3.10_qbz5n2kfra8p0\localcache\local-packages\python310\site-packages
