@@ -20,5 +20,33 @@ https://paletadecolores.com.mx/paleta/0474e2/2a8ce9/51a4f1/77bbf8/9dd3ff/
 
 c:\users\mario\appdata\local\packages\pythonsoftwarefoundation.python.3.10_qbz5n2kfra8p0\localcache\local-packages\python310\site-packages
 
-comienzo de mensaje de prueba
+Buen día, este es el reporte de su cuenta en la Cantina del Colegio María AuxiliadoraPosee una deuda de: -5.0$
+
+5 6/1/2024
+2 dona: -3.0$
+1 jugo: -1.0$
+
+Saldo resultate: -4.0
+
+Sábado 6/1/2024
+2 jugo: -2.0$
+1 Depósito: 10$
+1 Depósito: 5$
+1 torta: -3.0$
+1 Depósito: 3$
+10 galleta: -5.0$
+7 pizza: -10.5$
+2 agua: -2.0$
+2 jugo: -4.0$
+
+Saldo resultate: -12.5
+
+Domingo 7/1/2024
+1 Depósito: 15$
+4 jugos: -8.0$
+1 Depósito: 20$
+1 Corrección de saldo: -4.5$
+1 Corrección de saldo: -15.0$
+
+Saldo resultate: -5.0
 

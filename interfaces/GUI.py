@@ -50,9 +50,9 @@ class Gui(CTk):
             self.customerFrame = CTkFrame(self, width=720, height=720)
             self.customerFrame.pack()
 
-            if customer.balance < -1:
+            if customer.balance <= -1:
                 CTkLabel(self.customerFrame, text=f'Saldo: {customer.balance}$', fg_color='red', font=self.titleFont, width=370, height=40, corner_radius=5).place(x=310, y=20)
-            elif customer.balance >1:
+            elif customer.balance >= 1:
                 CTkLabel(self.customerFrame, text=f'Saldo: {customer.balance}$', fg_color='green', font=self.titleFont, width=370, height=40, corner_radius=5).place(x=310, y=20)
             else:
                 CTkLabel(self.customerFrame, text=f'Saldo: {customer.balance}$', fg_color='blue', font=self.titleFont, width=370, height=40, corner_radius=5).place(x=310, y=20)
@@ -79,13 +79,14 @@ class Gui(CTk):
                 CTkLabel(sf, text='------------------------------------------------------', font=self.labelFont, text_color='black').pack()
 
             btnBack = CTkButton(self.customerFrame, text="Regresar", width=100, height=40, font=self.buttonFont, command=self.open_menu).place(x=10, y=10)
-            btnFiar = CTkButton(self.customerFrame, text="Fiar", width=100, height=40, font=self.buttonFont, command=lambda:self.fiar_window(customer), fg_color='orange', text_color='black').place(x=100, y=200)
-            btnAbonar = CTkButton(self.customerFrame, text='Abonar', width=100, height=40, font=self.buttonFont, fg_color='green', command=lambda:self.abonar_window(customer)).place(x=100, y=260)
+            btnFiar = CTkButton(self.customerFrame, text="Fiar", width=100, height=40, font=self.buttonFont, command=lambda:self.fiar_window(customer), fg_color='orange', text_color='black').place(x=20, y=200)
+            btnAbonar = CTkButton(self.customerFrame, text='Abonar', width=100, height=40, font=self.buttonFont, fg_color='green', command=lambda:self.abonar_window(customer)).place(x=20, y=260)
             btnMessage = CTkButton(self.customerFrame, text='Enviar\nPendientes', width=100, height=40, font=self.buttonFont, command=lambda:self.check_conection(customer)).place(x=100, y=360)
             btnDateMessage = CTkButton(self.customerFrame, text='Enviar\npor fecha', width=100, height=40, font=self.buttonFont, command=lambda:self.send_by_date_window(customer)).place(x=100, y=440)
             btnDetele = CTkButton(self.customerFrame, text='Eliminar', width=100, height=40, font=self.buttonFont, fg_color='red', command=lambda:self.delete_customer(customer)).place(x=10, y=670)
-            btnModify = CTkButton(self.customerFrame, text='modificar', width=100, height=40, font=self.buttonFont, fg_color='blue', command=lambda:self.modify_window(customer)).place(x=180, y=10)
-            
+            btnModify = CTkButton(self.customerFrame, text='Modificar', width=100, height=40, font=self.buttonFont, fg_color='blue', command=lambda:self.modify_window(customer)).place(x=180, y=10)
+            btnCorrection = CTkButton(self.customerFrame, text='Corregir\nSaldo', width=100, height=40, font=self.buttonFont, fg_color='blue', command=lambda:self.correction_window(customer)).place(x=180, y=200)
+
             self.custFrameTittle.set(f'{customer.name} {customer.lastName}\nCI: {customer.ci}\nTeléfono: {customer.phone}')
             self.customerFrameTitle = CTkLabel(self.customerFrame, text=self.custFrameTittle.get(), font=self.titleFont2, width=200).place(x=10, y=70)
 
@@ -177,7 +178,7 @@ class Gui(CTk):
         save_customer(self.data)
 
     def add_to_aux_list(self, product, quantity, price, sf):
-        if product.get() != "" and quantity.get() != "" and quantity.get().isnumeric and price.get() != "" and price.get().isnumeric:
+        if product.get() != "" and quantity.get() != "" and quantity.get().isnumeric() and price.get() != "" and price.get().isnumeric():
             self.auxList.append({'name': product.get(), 'quantity':quantity.get(), 'price':-float(price.get())*float(quantity.get())})
             CTkLabel(sf, text=f'{quantity.get()} {product.get()}: {-float(price.get())*float(quantity.get())}$', text_color='black', font=self.labelFont, anchor='w', width=440).pack()
             product.set('')
@@ -187,9 +188,21 @@ class Gui(CTk):
             CTkMessagebox(message="Datos no válidos")
 
     def add_to_aux_list_deposito(self, amount, sf):
-        self.auxList.append({'name': 'Depósito', 'quantity':'1', 'price':amount.get()})
-        CTkLabel(sf, text=f'{1} "Depósito": {amount.get()}$', text_color='black', font=self.labelFont, anchor='w', width=440).pack()
-        amount.set('')
+        if amount.get().isnumeric():
+            self.auxList.append({'name': 'Depósito', 'quantity':'1', 'price':amount.get()})
+            CTkLabel(sf, text=f'{1} "Depósito": {amount.get()}$', text_color='black', font=self.labelFont, anchor='w', width=440).pack()
+            amount.set('')
+        else:
+            CTkMessagebox(message="Datos no válidos")
+
+    def add_to_aux_list_correction(self, amount, customer):
+        if (amount.get().strip('-')).isnumeric():
+            actualBalance = -(customer.balance - float(amount.get()))
+            self.auxList.append({'name': 'Corrección de saldo', 'quantity':'1', 'price':actualBalance})
+            amount.set('')
+            self.save_fiar(customer)
+        else:
+            CTkMessagebox(message="Datos no válidos")
 
     def reset_aux_list(self):
         self.auxList.clear()
@@ -411,6 +424,23 @@ class Gui(CTk):
         self.send_message(customer)
         self.close_fiar_window()
 
+    def correction_window(self, customer):
+        if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
+            self.toplevel_window = CTkToplevel(self)  # create window if its None or destroyed
+            self.toplevel_window.attributes('-topmost', 'true')
+            self.toplevel_window.geometry('480x240')
+
+            amount = StringVar(self.toplevel_window, '')
+
+            CTkLabel(self.toplevel_window, text='Saldo corregido: ', font=self.labelFont, width=100, height=30).place(x=10, y=40)
+            inputAmount = CTkEntry(self.toplevel_window, textvariable=amount,  placeholder_text="saldo", font=self.labelFont, width=300, height=30).place(x=150, y=40)
+
+            btnSaveNew = CTkButton(self.toplevel_window, text="Guardar", fg_color='green', width=150, height=40, font=self.buttonFont, command=lambda:self.add_to_aux_list_correction(amount, customer)).place(x=320, y=130)
+            btnCancel = CTkButton(self.toplevel_window, text="Cancelar", fg_color='red', width=120, height=40, font=self.buttonFont, command=lambda:self.close_fiar_window()).place(x=10, y=130) #Customer(len(self.data)+1, inputName.get(), inputLastName.get(), inputCi.get(),f'+58{inputPhoneExt}{inputPhoneNum}', 0, 'Nunca')
+
+        else:
+            self.toplevel_window.deiconify()
+
     def abonar_window(self, customer):
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
             self.toplevel_window = CTkToplevel(self)  # create window if its None or destroyed
@@ -434,9 +464,18 @@ class Gui(CTk):
 
     def send_message(self, customer):
 
-        message = "comienzo de mensaje de prueba\n\n"
+        message = "Buen día, este es el reporte de su cuenta en la Cantina del Colegio María Auxiliadora}n"
         message2 = ""
         history = list(reversed(self.hData[str(customer.id)]))
+
+        if customer.balance < 0:
+            message += f"Posee una deuda de: {customer.balance}$"
+        elif customer.balance > 0:
+            message += f"Posee un saldo a favor de: {customer.balance}$"
+        else:
+            message += f"Su saldo es de 0$"
+
+        message += "\n\n"
 
         for i, c in enumerate(history):
             if c.sent:
