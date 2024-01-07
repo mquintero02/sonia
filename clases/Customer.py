@@ -8,3 +8,4 @@ class Customer:
         self.phone = phone
         self.balance = balance
         self.lastMessageDate = lastMessageDate
+        self.lastMessageDateStr = ""

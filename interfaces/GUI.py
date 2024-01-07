@@ -1,12 +1,13 @@
 from customtkinter import *
 from CTkMessagebox import CTkMessagebox
-from pywhatkit import sendwhatmsg_instantly
 import requests
 from interfaces.CButton import CButton
 from clases.Customer import Customer
 from clases.Compra import Compra
 from db import *
-from datetime import datetime
+from datetime import datetime, timedelta
+import pyperclip
+
 class Gui(CTk):
 
     def __init__(self, data, hData):
@@ -28,6 +29,7 @@ class Gui(CTk):
         self.wh = 720
 
         self.auxList = []
+        self.weekDays = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
 
         #FRAME DE ENTRADA----------------------------------------------------------------------------
 
@@ -58,40 +60,32 @@ class Gui(CTk):
             sf = CTkScrollableFrame(self.customerFrame, width=370, height=600, fg_color='yellow')
             sf.place(x=310, y=70)
 
-
-            auxDate = ""
-            auxBalance = 0
             auxHData = list(reversed(customerHData))
             lColor = ''
-            for j, c in enumerate(auxHData):
-                if auxDate != c.dateStr:
-                    CTkLabel(sf, text=c.dateStr, font=self.labelFont, text_color='black').pack()
-                    auxBalance = c.resultBalance
-                    auxDate = c.dateStr
-                    if auxBalance < -1:
-                        lColor = '#ff735a'
-                    elif auxBalance > 1:
-                        lColor = '#a9e159'
-                    else:
-                        lColor = 'blue'
+            for c in auxHData:
+                CTkLabel(sf, text=c.dateStr, font=self.labelFont, text_color='black').pack()
+                if c.sent:
+                    CTkLabel(sf, text="enviado", fg_color="#00FFFF", width=370, font=self.labelFont, text_color='black').pack()
+                if c.resultBalance < -1:
+                    lColor = '#ff735a'
+                elif c.resultBalance > 1:
+                    lColor = '#a9e159'
+                else:
+                    lColor = 'blue'
                 for i in c.items:
                     CTkLabel(sf, text=f'{i["quantity"]} {i["name"]}: {i["price"]}$', text_color='black', anchor="w", width=370, font=self.labelFont).pack()
-                
-                if j+1 < len(auxHData):
-                    if auxHData[j+1].dateStr != auxDate:
-                        CTkLabel(sf, fg_color=lColor, text=f"saldo: {auxBalance}$", font=self.labelFont, text_color='black',width=370, anchor=E).pack()
-                        CTkLabel(sf, text='------------------------------------------------------', font=self.labelFont, text_color='black').pack()
-                else:
-                        CTkLabel(sf, fg_color=lColor, text=f"saldo: {auxBalance}$", font=self.labelFont, text_color='black',width=370, anchor=E).pack()
-                        CTkLabel(sf, text='------------------------------------------------------', font=self.labelFont, text_color='black').pack()
+
+                CTkLabel(sf, fg_color=lColor, text=f"saldo: {c.resultBalance}$", font=self.labelFont, text_color='black',width=370, anchor=E).pack()
+                CTkLabel(sf, text='------------------------------------------------------', font=self.labelFont, text_color='black').pack()
 
             btnBack = CTkButton(self.customerFrame, text="Regresar", width=100, height=40, font=self.buttonFont, command=self.open_menu).place(x=10, y=10)
             btnFiar = CTkButton(self.customerFrame, text="Fiar", width=100, height=40, font=self.buttonFont, command=lambda:self.fiar_window(customer), fg_color='orange', text_color='black').place(x=100, y=200)
             btnAbonar = CTkButton(self.customerFrame, text='Abonar', width=100, height=40, font=self.buttonFont, fg_color='green', command=lambda:self.abonar_window(customer)).place(x=100, y=260)
-            btnMessage = CTkButton(self.customerFrame, text='Enviar\nMensaje', width=100, height=40, font=self.buttonFont, command=lambda:self.send_message(customer)).place(x=100, y=360)
+            btnMessage = CTkButton(self.customerFrame, text='Enviar\nPendientes', width=100, height=40, font=self.buttonFont, command=lambda:self.check_conection(customer)).place(x=100, y=360)
+            btnDateMessage = CTkButton(self.customerFrame, text='Enviar\npor fecha', width=100, height=40, font=self.buttonFont, command=lambda:self.send_by_date_window(customer)).place(x=100, y=440)
             btnDetele = CTkButton(self.customerFrame, text='Eliminar', width=100, height=40, font=self.buttonFont, fg_color='red', command=lambda:self.delete_customer(customer)).place(x=10, y=670)
-            btnDetele = CTkButton(self.customerFrame, text='modificar', width=100, height=40, font=self.buttonFont, fg_color='blue', command=lambda:self.modify_window(customer)).place(x=180, y=10)
-
+            btnModify = CTkButton(self.customerFrame, text='modificar', width=100, height=40, font=self.buttonFont, fg_color='blue', command=lambda:self.modify_window(customer)).place(x=180, y=10)
+            
             self.custFrameTittle.set(f'{customer.name} {customer.lastName}\nCI: {customer.ci}\nTeléfono: {customer.phone}')
             self.customerFrameTitle = CTkLabel(self.customerFrame, text=self.custFrameTittle.get(), font=self.titleFont2, width=200).place(x=10, y=70)
 
@@ -165,9 +159,7 @@ class Gui(CTk):
 
     def add_data(self, name, lastName, ci, phoneExt, phoneNum):
         if name.get() != '' and lastName.get() != '' and ci.get().isnumeric() and len(phoneExt.get())==4 and phoneExt.get().isnumeric() and phoneNum.get().isnumeric():
-            
-            print(type(name))
-            
+                        
             newId = int(read_last_index()) + 1
             newCust = Customer(newId, name.get(), lastName.get(), ci.get(), f'+58{phoneExt.get()[1:]}{phoneNum.get()}', 0, 'Nunca')
             self.data.append(newCust)
@@ -187,7 +179,7 @@ class Gui(CTk):
     def add_to_aux_list(self, product, quantity, price, sf):
         if product.get() != "" and quantity.get() != "" and quantity.get().isnumeric and price.get() != "" and price.get().isnumeric:
             self.auxList.append({'name': product.get(), 'quantity':quantity.get(), 'price':-float(price.get())*float(quantity.get())})
-            CTkLabel(sf, text=f'({quantity.get()}) {product.get()}: {-float(price.get())*float(quantity.get())}$', text_color='black', font=self.labelFont, anchor='w', width=440).pack()
+            CTkLabel(sf, text=f'{quantity.get()} {product.get()}: {-float(price.get())*float(quantity.get())}$', text_color='black', font=self.labelFont, anchor='w', width=440).pack()
             product.set('')
             quantity.set('')
             price.set('')
@@ -196,7 +188,7 @@ class Gui(CTk):
 
     def add_to_aux_list_deposito(self, amount, sf):
         self.auxList.append({'name': 'Depósito', 'quantity':'1', 'price':amount.get()})
-        CTkLabel(sf, text=f'({1}) "Depósito": {amount.get()}$', text_color='black', font=self.labelFont, anchor='w', width=440).pack()
+        CTkLabel(sf, text=f'{1} "Depósito": {amount.get()}$', text_color='black', font=self.labelFont, anchor='w', width=440).pack()
         amount.set('')
 
     def reset_aux_list(self):
@@ -214,9 +206,19 @@ class Gui(CTk):
         index = self.data.index(customer)
         customer.balance += amount
 
-        self.hData[str(customer.id)].append(
-            Compra(self.auxList, datetime.now(), customer.balance)
-        )
+        dateToCompare = datetime.now()
+        dateDay = dateToCompare.weekday()
+
+        if len(self.hData[str(customer.id)]) == 0:
+            self.hData[str(customer.id)].append(
+                Compra(self.auxList, dateToCompare, f'{self.weekDays[dateDay]} {dateToCompare.day}/{dateToCompare.month}/{dateToCompare.year}', customer.balance)
+            )
+        elif self.hData[str(customer.id)][-1].dateStr == f'{self.weekDays[dateDay]} {dateToCompare.day}/{dateToCompare.month}/{dateToCompare.year}':
+            self.hData[str(customer.id)][-1].add_items(self.auxList, customer.balance)
+        else:
+            self.hData[str(customer.id)].append(
+                Compra(self.auxList, dateToCompare, f'{self.weekDays[dateDay]} {dateToCompare.day}/{dateToCompare.month}/{dateToCompare.year}', customer.balance)
+            )
         save_history(self.hData)
         self.update_data(index, customer)
         self.refresh_customer_window(customer)
@@ -319,6 +321,96 @@ class Gui(CTk):
         else:
             self.toplevel_window.deiconify()  #if window exists focus it
 
+    def send_by_date_window(self, customer):
+        if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
+            self.toplevel_window = CTkToplevel(self)  # create window if its None or destroyed
+            self.toplevel_window.attributes('-topmost', 'true')
+            self.toplevel_window.geometry('480x480')
+
+            day = StringVar(self.toplevel_window, 1)
+            month = StringVar(self.toplevel_window, datetime.now().month)
+            year = StringVar(self.toplevel_window, datetime.now().year)
+
+            CTkLabel(self.toplevel_window, text='Día', font=self.labelFont, width=100, height=30).place(x=10, y=40)
+            inputDay = CTkEntry(self.toplevel_window, textvariable=day,  placeholder_text="dd", font=self.labelFont, width=100, height=30).place(x=120, y=40)
+            CTkLabel(self.toplevel_window, text='Mes', font=self.labelFont, width=100, height=30).place(x=10, y=80)
+            inputMonth = CTkEntry(self.toplevel_window, textvariable=month,  placeholder_text="mm", font=self.labelFont, width=100, height=30).place(x=120, y=80)
+            CTkLabel(self.toplevel_window, text='Año', font=self.labelFont, width=100, height=30).place(x=10, y=120)
+            inputYear = CTkEntry(self.toplevel_window, textvariable=year,  placeholder_text="yyyy", font=self.labelFont, width=100, height=30).place(x=120, y=120)
+
+            btnSendByDate = CTkButton(self.toplevel_window, text="Enviar", fg_color='blue', width=120, height=40, font=self.buttonFont, command=lambda:self.prepare_message(customer, day.get(), month.get(), year.get())).place(x=280, y=80)
+            btnSendLastWeek = CTkButton(self.toplevel_window, text="Enviar\núltima semana", fg_color='blue', width=120, height=40, font=self.buttonFont, command=lambda:self.prepare_week_message(customer)).place(x=10, y=230)
+
+            btnCancel = CTkButton(self.toplevel_window, text="Cancelar", fg_color='red', width=120, height=40, font=self.buttonFont, command=lambda:self.close_fiar_window()).place(x=10, y=430) #Customer(len(self.data)+1, inputName.get(), inputLastName.get(), inputCi.get(),f'+58{inputPhoneExt}{inputPhoneNum}', 0, 'Nunca')
+
+        else:
+            self.toplevel_window.deiconify()  #if window exists focus it
+    def check_conection(self, customer):
+        try:
+            request = requests.get("https://google.com", timeout=5)
+        except (requests.ConnectionError, requests.Timeout):
+            CTkMessagebox(message="Sin conexión a internet")
+            return
+        else:
+            print("Con conexión a internet.")
+        self.send_message(customer)
+
+    def prepare_message(self, customer, day, month, year):
+        try:
+            date = datetime(int(year), int(month), int(day))
+        except:
+            CTkMessagebox(message="Datos no válidos")
+            return
+
+        try:
+            request = requests.get("https://google.com", timeout=5)
+        except (requests.ConnectionError, requests.Timeout):
+            CTkMessagebox(message="Sin conexión a internet")
+            return
+        else:
+            print("Con conexión a internet.")
+
+        history = list(reversed(self.hData[str(customer.id)]))
+
+        for i, c in enumerate(history):
+            if c.date >= date:
+                c.sent = False
+            else:
+                break
+        
+        self.hData[str(customer.id)] = list(reversed(history))
+        save_history(self.hData)
+
+        self.send_message(customer)
+        self.close_fiar_window()
+
+    def prepare_week_message(self, customer):
+        date = datetime.now()
+        deltaTime = timedelta(weeks=1)
+        auxDate = date - deltaTime
+
+        try:
+            request = requests.get("https://google.com", timeout=5)
+        except (requests.ConnectionError, requests.Timeout):
+            CTkMessagebox(message="Sin conexión a internet")
+            return
+        else:
+            print("Con conexión a internet.")
+
+        history = list(reversed(self.hData[str(customer.id)]))
+
+        for i, c in enumerate(history):
+            if c.date >= auxDate:
+                c.sent = False
+            else:
+                break
+        
+        self.hData[str(customer.id)] = list(reversed(history))
+        save_history(self.hData)
+
+        self.send_message(customer)
+        self.close_fiar_window()
+
     def abonar_window(self, customer):
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
             self.toplevel_window = CTkToplevel(self)  # create window if its None or destroyed
@@ -341,13 +433,6 @@ class Gui(CTk):
             self.toplevel_window.deiconify()  #if window exists focus it
 
     def send_message(self, customer):
-        try:
-            request = requests.get("https://google.com", timeout=5)
-        except (requests.ConnectionError, requests.Timeout):
-            print("Sin conexión a internet.")
-            return
-        else:
-            print("Con conexión a internet.")
 
         message = "comienzo de mensaje de prueba\n\n"
         message2 = ""
@@ -360,8 +445,15 @@ class Gui(CTk):
                 message2 = c.toString() + message2
                 c.sent = True
         
-        self.hData[str(customer.id)] = history
+        self.hData[str(customer.id)] = list(reversed(history))
         save_history(self.hData)
 
+        date = datetime.now()
+        dateDay = date.weekday()
+        customer.lastMessageDateStr = f'{self.weekDays[dateDay]} {date.day}/{date.month}/{date.year}'
+        self.update_data(self.data.index(customer), customer)
+        self.refresh_customer_window(customer)
+        
         message = message + message2    
-        sendwhatmsg_instantly(customer.phone, message)
+
+        pyperclip.copy(message)
