@@ -178,30 +178,34 @@ class Gui(CTk):
         save_customer(self.data)
 
     def add_to_aux_list(self, product, quantity, price, sf):
-        if product.get() != "" and quantity.get() != "" and quantity.get().isnumeric() and price.get() != "" and price.get().isnumeric():
-            self.auxList.append({'name': product.get(), 'quantity':quantity.get(), 'price':-float(price.get())*float(quantity.get())})
-            CTkLabel(sf, text=f'{quantity.get()} {product.get()}: {-float(price.get())*float(quantity.get())}$', text_color='black', font=self.labelFont, anchor='w', width=440).pack()
-            product.set('')
-            quantity.set('')
-            price.set('')
-        else:
+        try:
+            if product.get() != "" and quantity.get() != "" and quantity.get().isnumeric() and price.get() != "":
+                self.auxList.append({'name': product.get(), 'quantity':quantity.get(), 'price':-float(price.get())*float(quantity.get())})
+                CTkLabel(sf, text=f'{quantity.get()} {product.get()}: {-float(price.get())*float(quantity.get())}$', text_color='black', font=self.labelFont, anchor='w', width=440).pack()
+                product.set('')
+                quantity.set('')
+                price.set('')
+            else:
+                CTkMessagebox(message="Datos no válidos")
+        except:
             CTkMessagebox(message="Datos no válidos")
 
+            
     def add_to_aux_list_deposito(self, amount, sf):
-        if amount.get().isnumeric():
+        try:
             self.auxList.append({'name': 'Depósito', 'quantity':'1', 'price':amount.get()})
             CTkLabel(sf, text=f'{1} "Depósito": {amount.get()}$', text_color='black', font=self.labelFont, anchor='w', width=440).pack()
             amount.set('')
-        else:
+        except:
             CTkMessagebox(message="Datos no válidos")
 
     def add_to_aux_list_correction(self, amount, customer):
-        if (amount.get().strip('-')).isnumeric():
+        try:
             actualBalance = -(customer.balance - float(amount.get()))
             self.auxList.append({'name': 'Corrección de saldo', 'quantity':'1', 'price':actualBalance})
             amount.set('')
             self.save_fiar(customer)
-        else:
+        except:
             CTkMessagebox(message="Datos no válidos")
 
     def reset_aux_list(self):
