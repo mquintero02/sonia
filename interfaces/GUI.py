@@ -108,6 +108,8 @@ class Gui(CTk):
             self.menuFrame = CTkFrame(self, width=720, height=720)
             self.menuFrame.pack()
 
+            self.data.sort(key=lambda x: x.name.lower(), reverse=False)
+
             #TITULO DEL MAIN
             title = CTkLabel(self.menuFrame, text="Cantina María Auxiliadora", font=self.titleFont)
             title.place(x=10, y=10)
@@ -468,7 +470,7 @@ class Gui(CTk):
 
     def send_message(self, customer):
 
-        message = "Buen día, este es el reporte de su cuenta en la Cantina del Colegio María Auxiliadora}n"
+        message = "Buen día, este es el reporte de su cuenta en la Cantina del Colegio María Auxiliadora\n"
         message2 = ""
         history = list(reversed(self.hData[str(customer.id)]))
 
