@@ -10,18 +10,9 @@ class Compra:
         self.resultBalance = resultBalance
         
     def toString(self):
-        message = ''
-        message += f"{self.dateStr}\n"
-        for i in self.items:
-            message += f'{i["quantity"]} {i["name"]}: {i["price"]}$\n'
-        message += '\n'
-        message += f"Saldo resultate: {self.resultBalance}\n\n"
-
+        message = f"{self.dateStr}\n{self.items}\nTotal: {self.resultBalance}"
         return message
     
-    def add_items(self, auxList, newBalance):
-        for i in auxList:
-            self.items.append(i)
-        
-        self.resultBalance = newBalance
-        self.sent = False
+    def add_items(self, items, amount):
+        self.resultBalance += amount
+        self.items = f'{self.items}\n{items}'
