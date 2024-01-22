@@ -10,7 +10,7 @@ class Compra:
         self.resultBalance = resultBalance
         
     def toString(self):
-        message = f"{self.dateStr}\n{self.items}\nTotal: {self.resultBalance}"
+        message = f"{self.dateStr}\n{self.items}\nTotal: {self.resultBalance}\n"
         return message
     
     def add_items(self, items, amount):

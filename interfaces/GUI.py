@@ -31,7 +31,7 @@ class Gui(CTk):
 
         self.auxList = []
         self.weekDays = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
-
+        self.color = StringVar(self, "blue")
         #FRAME DE ENTRADA----------------------------------------------------------------------------
 
         self.menuFrame = None
@@ -73,18 +73,15 @@ class Gui(CTk):
             filterName = CTkEntry(self.menuFrame, placeholder_text="Nombre", font=self.labelFont)
             filterName.place(x=10, y=150)
 
-            filterLastName = CTkEntry(self.menuFrame, placeholder_text="Apellido", font=self.labelFont)
-            filterLastName.place(x=10, y=200)
-
             filterCi = CTkEntry(self.menuFrame, placeholder_text="Cédula", font=self.labelFont)
             filterCi.place(x=10, y=250)
 
             btnfilter = CTkButton(self.menuFrame, text="Filtrar", width=140, height=40, font=self.buttonFont,
-                                command=lambda:self.filter(filterName.get(), filterLastName.get(), filterCi.get(), sf))
+                                command=lambda:self.filter(filterName.get(), filterCi.get(), sf))
             btnfilter.place(x=10, y=300)
 
             btnResetFilter =CTkButton(self.menuFrame, text="Eliminar filtro", width=150, height=40, font=self.buttonFont,
-                                command=lambda:self.filter("", "", "", sf))
+                                command=lambda:self.filter("", "", sf))
             btnResetFilter.place(x=180, y=300)
 
     def refresh_menu(self):
@@ -112,8 +109,18 @@ class Gui(CTk):
 
             for k in list(reversed(customerHData)):
                 CTkLabel(sf, text=k, font=self.labelFont, text_color='black').pack()
+                if customer.history[k].sent:
+                    CTkLabel(sf, text="Enviado", font=self.labelFont, text_color="black", fg_color="#9cdfff", width=360).pack()
                 CTkLabel(sf, text=customer.history[k].items, font=self.labelFont, text_color='black', width=360, anchor=W).pack()
-                CTkLabel(sf, text=f'Total: {customer.history[k].resultBalance}$', font=self.labelFont, text_color='black', width=360, anchor=E).pack()
+                
+                if customer.history[k].resultBalance > 0:
+                    self.color.set("#70ff8b")
+                elif customer.history[k].resultBalance < 0:
+                    self.color.set("#ff1744")
+                else:
+                    self.color.set("blue")
+
+                CTkLabel(sf, text=f'Total: {customer.history[k].resultBalance}$', font=self.labelFont, text_color="black", fg_color=self.color.get(), width=360, anchor=E).pack()
 
             btnBack = CTkButton(self.customerFrame, text="Regresar", width=100, height=40, font=self.buttonFont, command=self.open_menu).place(x=10, y=10)
             btnFiar = CTkButton(self.customerFrame, text="Fiar", width=100, height=40, font=self.buttonFont, command=lambda:self.fiar_window(customer), fg_color='orange', text_color='black').place(x=20, y=200)
@@ -122,7 +129,6 @@ class Gui(CTk):
             btnDateMessage = CTkButton(self.customerFrame, text='Enviar\npor fecha', width=100, height=40, font=self.buttonFont, command=lambda:self.send_by_date_window(customer)).place(x=100, y=440)
             btnDetele = CTkButton(self.customerFrame, text='Eliminar', width=100, height=40, font=self.buttonFont, fg_color='red', command=lambda:self.delete_customer(customer)).place(x=10, y=670)
             btnModify = CTkButton(self.customerFrame, text='Modificar', width=100, height=40, font=self.buttonFont, fg_color='blue', command=lambda:self.modify_window(customer)).place(x=180, y=10)
-            btnCorrection = CTkButton(self.customerFrame, text='Corregir\nSaldo', width=100, height=40, font=self.buttonFont, fg_color='blue', command=lambda:self.correction_window(customer)).place(x=180, y=200)
             
     def refresh_customer_window(self, customer):
         self.customerFrame.destroy()
@@ -208,11 +214,25 @@ class Gui(CTk):
         self.data[index] = updatedCustomer
         save_customer(self.data)
 
-    def modify_data(self, customer, index, name, ci, phoneNum):
+    def modify_data(self, customer, index, name, ci, phoneNum, balance):
+        try:            
+            balance = float(balance.get())
+            if balance != customer.balance:
+                option = CTkMessagebox(message=f"¿Seguro que quieres modificar el saldo?",option_2="No", option_1="Si", font=self.labelFont)
+                response = option.get()
+
+                if response == "No":
+                    return
+        except:
+            
+            CTkMessagebox(message="Datos no válidos")
+            return
+        
         if name.get() != '' and ci.get().isnumeric() and phoneNum.get().isnumeric():
             customer.name = name.get()
             customer.ci = ci.get()
             customer.phone = f'{phoneNum.get()}'
+            customer.balance = balance
             self.update_data(index, customer)
             self.refresh_customer_window(customer)
             self.toplevel_window.destroy()
@@ -220,7 +240,7 @@ class Gui(CTk):
             CTkMessagebox(message="Datos no válidos")
 
     def delete_customer(self, customer):
-        option = CTkMessagebox(message=f"¿Seguro que quieres eliminar a {customer.name} {customer.lastName}?",option_2="No", option_1="Si", font=self.labelFont)
+        option = CTkMessagebox(message=f"¿Seguro que quieres eliminar a {customer.name}?",option_2="No", option_1="Si", font=self.labelFont)
         response = option.get()
 
         if response == "Si":
@@ -235,12 +255,12 @@ class Gui(CTk):
 
     #MANIPULAR LISTA DE CLIENTES----------------------------------------------
     
-    def filter(self, name, lastName, ci, sf):
+    def filter(self, name, ci, sf):
         for c in sf.winfo_children():
             c.destroy()
 
         for c in self.data:
-            if f"{name}".lower() in c.name.lower() and f"{lastName}".lower() in c.lastName.lower() and f"{ci}".lower() in c.ci.lower():
+            if f"{name}".lower() in c.name.lower() and f"{ci}".lower() in c.ci.lower():
                 CButton(c, sf, self).set_button()    
 
      #MANIPULAR LISTA DE CLIENTES----------------------------------------------
@@ -414,6 +434,7 @@ class Gui(CTk):
             name = StringVar(self.toplevel_window, customer.name)
             ci = StringVar(self.toplevel_window, customer.ci)
             phoneNum = StringVar(self.toplevel_window, f'{customer.phone}')
+            balance = StringVar(self.toplevel_window, f'{customer.balance}')
 
             CTkLabel(self.toplevel_window, text='Nombre', font=self.labelFont, width=100, height=30).place(x=10, y=10)
             inputName = CTkEntry(self.toplevel_window, textvariable=name,  placeholder_text="Nombre", font=self.labelFont, width=300, height=30).place(x=120, y=10)
@@ -421,8 +442,10 @@ class Gui(CTk):
             inputCi = CTkEntry(self.toplevel_window, textvariable=ci,placeholder_text="Cédula", font=self.labelFont, width=300, height=30).place(x=120, y=90)
             CTkLabel(self.toplevel_window, text='Teléfono', font=self.labelFont, width=100, height=30).place(x=10, y=130)
             inputPhoneNum = CTkEntry(self.toplevel_window, textvariable=phoneNum, placeholder_text="04xx1111111", font=self.labelFont, width=300, height=30).place(x=120, y=130)
+            CTkLabel(self.toplevel_window, text='Saldo', font=self.labelFont, width=100, height=30).place(x=10, y=180)
+            inputBalance = CTkEntry(self.toplevel_window, textvariable=balance, font=self.labelFont, width=300, height=30).place(x=120, y=180)
         
-            btnSaveNew = CTkButton(self.toplevel_window, text="Guardar", fg_color='green', width=150, height=40, font=self.buttonFont, command=lambda:self.modify_data(customer, index, name, ci, phoneNum)).place(x=165, y=200)
+            btnSaveNew = CTkButton(self.toplevel_window, text="Guardar", fg_color='green', width=150, height=40, font=self.buttonFont, command=lambda:self.modify_data(customer, index, name, ci, phoneNum, balance)).place(x=165, y=240)
             btnCancel = CTkButton(self.toplevel_window, text="Cancelar", fg_color='red', width=120, height=40, font=self.buttonFont, command=lambda:self.toplevel_window.destroy()).place(x=10, y=430) #Customer(len(self.data)+1, inputName.get(), inputLastName.get(), inputCi.get(),f'+58{inputPhoneExt}{inputPhoneNum}', 0, 'Nunca')
 
         else:
